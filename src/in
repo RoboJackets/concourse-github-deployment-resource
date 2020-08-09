@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+"""
+Writes the provided version to a state file
+"""
+
+from json import dump, dumps, loads
+from os import path
+from sys import argv, stdin
+
+assert len(argv) == 2
+
+concourse_input = loads(stdin.read())
+
+assert isinstance(concourse_input, dict)
+assert isinstance(concourse_input["version"], dict)
+assert isinstance(concourse_input["version"]["id"], str)
+
+version_id = concourse_input["version"]["id"]
+
+output_directory = argv[1]
+
+assert path.exists(output_directory)
+assert path.isdir(output_directory)
+
+with open(output_directory + "/state.json", "w") as state_file:
+    dump({"id": version_id}, state_file)
+
+print(dumps({"version": {"id": version_id,}}))  # noqa: E231

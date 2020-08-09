@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+
+"""
+Calls the GitHub API to create or update a deployment
+"""
+import logging
+import sys
+from json import dumps, load, loads
+from os import getenv, listdir, path
+from subprocess import run
+from sys import argv, stderr, stdin
+
+from requests import get, post
+
+required_source_fields = ("repository", "token", "resource_name")
+optional_source_fields = ("pull_request", "debug", "environment_urls")
+state_options = (
+    "error",
+    "failure",
+    "inactive",
+    "in_progress",
+    "queued",
+    "pending",
+    "success",
+)
+
+assert len(argv) == 2
+
+input_directory = argv[1]
+
+assert path.exists(input_directory)
+assert path.isdir(input_directory)
+
+concourse_input = loads(stdin.read())
+
+assert isinstance(concourse_input, dict)
+assert "source" in concourse_input, "Missing required `source` fields"
+assert isinstance(concourse_input["source"], dict), "`source` must be a dict, check pipeline configuration"
+
+for source_field in required_source_fields:
+    assert source_field in concourse_input["source"], f"Missing required field `{source_field}`in `source`"
+
+for source_field in concourse_input["source"]:
+    assert (
+        source_field in required_source_fields or source_field in optional_source_fields
+    ), f"Unexpected field `{source_field}` passed in `source`"
+
+assert "params" in concourse_input, "`params` required, check documentation"
+
+if "debug" in concourse_input["source"]:
+    if not concourse_input["source"]["debug"] is True:
+        print("Debug flag set to invalid value, check documentation")
+        sys.exit(1)
+
+    handler = logging.StreamHandler(stderr)
+    handler.setLevel(logging.DEBUG)
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    logger.debug("Debug logging enabled")
+
+repository = path.join(input_directory, concourse_input["source"]["repository"])
+
+if not path.exists(repository) and "pull_request" in concourse_input["source"]:
+    pull_request = path.join(input_directory, concourse_input["source"]["pull_request"])
+    if path.exists(pull_request):
+        repository = pull_request
+
+assert path.exists(repository)
+assert path.isdir(repository)
+
+if len(listdir(input_directory)) > 2:
+    print(
+        "To improve performance, you may want to manually configure the inputs to this step.", file=stderr,
+    )
+
+git_rev_parse_output = run(["git", "-C", repository, "rev-parse", "HEAD"], text=True, capture_output=True, check=True)
+
+git_remote_output = run(["git", "-C", repository, "remote", "--verbose"], text=True, capture_output=True, check=True)
+if len(git_remote_output.stdout.strip()) == 0:
+    with open(path.join(repository, ".git", "resource", "url"), "r") as url_file:
+        remote = url_file.read().split("/")
+else:
+    remote = git_remote_output.stdout.strip().split("\n")[0].split("\t")[1].split("/")
+
+host = remote[2]
+api_base_url = "https://" + ("api.github.com" if host == "github.com" else host + "/api/v3")
+owner = remote[3]
+repo = remote[4].split(" ")[0]
+head_sha = git_rev_parse_output.stdout.strip()
+
+log_url = (
+    getenv("ATC_EXTERNAL_URL")  # type: ignore
+    + "/teams/"  # type: ignore
+    + getenv("BUILD_TEAM_NAME")
+    + "/pipelines/"
+    + getenv("BUILD_PIPELINE_NAME")
+    + "/jobs/"
+    + getenv("BUILD_JOB_NAME")
+    + "/builds/"
+    + getenv("BUILD_NAME")
+)
+
+state_file_path = path.join(input_directory, concourse_input["source"]["resource_name"], "state.json")
+
+headers = {
+    "Authorization": "Bearer " + concourse_input["source"]["token"],
+    "User-Agent": "concourse-github-check-resource",
+    "Accept": "application/vnd.github.antiope-preview+json,application/vnd.github.ant-man-preview+json,application/vnd.github.flash-preview+json",  # noqa: E501  # pylint: disable=C0301
+}
+
+if path.exists(state_file_path):
+    assert path.isfile(state_file_path)
+
+    with open(state_file_path, "r") as state_file:
+        state = load(state_file)
+
+    assert isinstance(state, dict)
+    assert isinstance(state["id"], str)
+
+    deployment_id = state["id"]
+
+    params = concourse_input["params"]
+    assert isinstance(params, dict), "`params` must be a dict, check pipeline configuration"
+
+    assert "state" in params, "`state` required in `params` to update an existing deployment"
+
+    state = params["state"]
+
+    assert (
+        state in state_options
+    ), "Invalid `state` specified - refer to the GitHub API documentation for possible values"
+
+    data = {"state": state, "log_url": log_url}
+
+    if "environment_urls" in concourse_input["source"]:
+        environment_urls = concourse_input["source"]["environment_urls"]
+        assert isinstance(environment_urls, dict)
+        assert len(environment_urls) > 0
+        response = get(f"{api_base_url}/repos/{owner}/{repo}/deployments/{deployment_id}", headers=headers,)
+        assert (
+            response.status_code == 200
+        ), f"Got unexpected response code {response.status_code} from GitHub: {response.json()}"
+        environment = response.json()["environment"]
+        if environment in environment_urls:
+            data["environment_url"] = environment_urls[environment]
+
+    response = post(
+        f"{api_base_url}/repos/{owner}/{repo}/deployments/{deployment_id}/statuses", json=data, headers=headers
+    )
+    assert (
+        response.status_code == 201
+    ), f"Got unexpected response code {response.status_code} from GitHub: {response.json()}"
+
+    url = response.json()["url"]
+
+    print(dumps({"version": {"id": deployment_id}, "metadata": [{"name": "url", "value": url},],}))  # noqa: E231
+else:
+    params = concourse_input["params"]
+    assert isinstance(params, dict), "`params` must be a dict, check pipeline configuration"
+
+    assert "environment" in params, "`environment` required in `params` to create a new deployment"
+
+    environment = params["environment"]
+
+    data = {
+        "ref": head_sha,
+        "environment": environment,
+    }
+
+    response = post(f"{api_base_url}/repos/{owner}/{repo}/deployments", json=data, headers=headers)
+    assert (
+        response.status_code == 201
+    ), f"Got unexpected response code {response.status_code} from GitHub: {response.json()}"
+
+    json = response.json()
+
+    deployment_id = json["id"]
+    url = json["url"]
+
+    print(dumps({"version": {"id": str(deployment_id)}, "metadata": [{"name": "url", "value": url},],}))  # noqa: E231
