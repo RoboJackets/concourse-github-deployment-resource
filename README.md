@@ -5,14 +5,14 @@ Concourse resource for GitHub deployments
 
 ## Source configuration
 
-- `repository` (required) - the resource where your source code is provided
-- `pull_request` (optional) - the resource where pull requests are provided
+- `repository_url` (required) - location of the repository
+- `commit` (required) - commit that is being built
 - `token` (required) - GitHub App token to use to authenticate
-- `resource_name` (required) - the name of the resource within Concourse
-- `debug` (optional) - whether to enable debug logging; must be set to boolean true if present
+- `resource_name` (required) - name of the resource within Concourse
 - `environment_urls` (optional) - map of environment names to URLs, to be passed to GitHub
+- `debug` (optional) - whether to enable debug logging; must be set to boolean true if present
 
-GitHub endpoint information, commit SHA, and the URL to the Concourse job log will be derived from the environment. `repository` will be used first, then `pull_request` if it is not available.
+GitHub endpoint information and the URL to the Concourse job log will be derived from the environment.
 
 ## Behavior
 Do not `get` this resource manually, it will not work.
@@ -24,10 +24,9 @@ Returns an empty list.
 Writes the requested version out to disk for future `put`s to update. Intended only for implicit `get`s after `put`s.
 
 ### `out`
-You may want to [manually configure inputs](https://concourse-ci.org/jobs.html#schema.step.put-step.inputs) for better performance if you have large resources in your pipeline.
 
 #### First `put`
-Creates a new deployment. Specify `environment` in `params`.
+Creates a new deployment. Specify `environment` in `params`. Must be called with no `inputs`.
 
 #### Subsequent `put`s
 Creates a deployment status for a previously-created deployment. Specify `state` in `params`. Refer to [the GitHub deployment status API documentation](https://docs.github.com/en/rest/reference/repos#create-a-deployment-status) for possible values.

@@ -1,0 +1,71 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "source": {
+            "type": "object",
+            "properties": {
+                "repository_url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "commit": {
+                    "type": "string",
+                    "regex": "[a-z0-9]{40}"
+                },
+                "token": {
+                    "type": "string",
+                    "regex": "ghs_[a-zA-Z0-9]{36}"
+                },
+                "resource_name": {
+                    "type": "string"
+                },
+                "environment_urls": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "propertyNames": {
+                        "pattern": "^[a-z]+$"
+                    },
+                    "minProperties": 1
+                },
+                "debug": {
+                    "const": true
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "pull_request_url",
+                "commit_id",
+                "token"
+            ]
+        },
+        "params": {
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "failure",
+                        "inactive",
+                        "in_progress",
+                        "queued",
+                        "pending",
+                        "success"
+                    ]
+                },
+                "environment": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "source",
+        "params"
+    ]
+}
