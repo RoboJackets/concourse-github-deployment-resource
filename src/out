@@ -8,7 +8,7 @@ from json import dumps, load, loads
 from os import getenv, listdir, path
 from sys import argv, stderr, stdin
 
-from jsonschema import validate  # type: ignore
+from jsonschema import validate
 
 from requests import get, post
 
