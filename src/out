@@ -8,7 +8,7 @@ from json import dumps, load, loads
 from os import getenv, listdir, path
 from sys import argv, stderr, stdin
 
-from jsonschema import validate
+from jsonschema import validate  # type: ignore
 
 from requests import get, post
 
@@ -46,7 +46,7 @@ head_sha = concourse_input["source"]["commit"]
 
 log_url = (
     getenv("ATC_EXTERNAL_URL")  # type: ignore
-    + "/teams/"  # type: ignore
+    + "/teams/"
     + getenv("BUILD_TEAM_NAME")
     + "/pipelines/"
     + getenv("BUILD_PIPELINE_NAME")
