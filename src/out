@@ -36,7 +36,7 @@ if "debug" in concourse_input["source"]:
 
     logger.debug("Debug logging enabled")
 
-remote = concourse_input["source"]["repository_url"]
+remote = concourse_input["source"]["repository_url"].split("/")
 
 host = remote[2]
 api_base_url = "https://" + ("api.github.com" if host == "github.com" else host + "/api/v3")
