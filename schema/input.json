@@ -36,7 +36,7 @@
             },
             "additionalProperties": false,
             "required": [
-                "pull_request_url",
+                "repository_url",
                 "commit_id",
                 "token"
             ]
