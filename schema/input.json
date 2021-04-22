@@ -37,7 +37,7 @@
             "additionalProperties": false,
             "required": [
                 "repository_url",
-                "commit_id",
+                "commit",
                 "token"
             ]
         },
