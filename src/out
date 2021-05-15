@@ -77,7 +77,7 @@ if path.exists(state_file_path):
 
     deployment_id = state["id"]
 
-    data = {"state": state, "log_url": log_url}
+    data = {"state": concourse_input["params"]["state"], "log_url": log_url}
 
     if "environment_urls" in concourse_input["source"]:
         environment_urls = concourse_input["source"]["environment_urls"]
