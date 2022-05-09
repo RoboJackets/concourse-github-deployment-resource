@@ -60,8 +60,15 @@ log_url = (
 
 state_file_path = path.join(input_directory, concourse_input["source"]["resource_name"], "state.json")
 
+token = concourse_input["source"]["token"]
+concourse_username = getenv("BUILD_CREATED_BY")
+
+if "github_user_tokens" in concourse_input["source"] and concourse_username is not None:
+    assert concourse_username in concourse_input["source"]["github_user_tokens"]
+    token = concourse_input["source"]["github_user_tokens"][concourse_username]
+
 headers = {
-    "Authorization": "Bearer " + concourse_input["source"]["token"],
+    "Authorization": "Bearer " + token,
     "User-Agent": "concourse-github-check-resource",
     "Accept": "application/vnd.github.antiope-preview+json,application/vnd.github.ant-man-preview+json,application/vnd.github.flash-preview+json",  # noqa: E501  # pylint: disable=C0301
 }

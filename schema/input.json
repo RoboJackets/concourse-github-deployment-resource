@@ -32,6 +32,17 @@
                 },
                 "debug": {
                     "const": true
+                },
+                "github_user_tokens": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string",
+                        "regex": "ghu_[a-zA-Z0-9]{36}"
+                    },
+                    "propertyNames": {
+                        "pattern": "^[a-z]+[0-9]+$"
+                    },
+                    "minProperties": 1
                 }
             },
             "additionalProperties": false,
