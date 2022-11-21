@@ -33,6 +33,9 @@
                 "debug": {
                     "const": true
                 },
+                "check_environment": {
+                    "type": "string"
+                },
                 "github_user_tokens": {
                     "type": "object",
                     "additionalProperties": {

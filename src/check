@@ -3,5 +3,55 @@
 """
 Returns an empty list of versions
 """
+import logging
+from json import loads, dumps
+from sys import stdin, stderr
 
-print("[]")
+from requests import get
+
+concourse_input = loads(stdin.read())
+
+if "check_environment" not in concourse_input["source"]:
+    print("[]")
+
+if "debug" in concourse_input["source"]:
+    assert concourse_input["source"]["debug"] is True
+
+    handler = logging.StreamHandler(stderr)
+    handler.setLevel(logging.DEBUG)
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    logger.debug("Debug logging enabled")
+
+remote = concourse_input["source"]["repository_url"].split("/")
+
+host = remote[2]
+api_base_url = "https://" + ("api.github.com" if host == "github.com" else host + "/api/v3")
+owner = remote[3]
+repo = remote[4].split(" ")[0]
+
+token = concourse_input["source"]["token"]
+
+headers = {
+    "Authorization": "Bearer " + token,
+    "User-Agent": "concourse-github-check-resource",
+    "Accept": "application/vnd.github.antiope-preview+json,application/vnd.github.ant-man-preview+json,application/vnd.github.flash-preview+json",  # noqa: E501  # pylint: disable=C0301
+}
+
+response = get(f"{api_base_url}/repos/{owner}/{repo}/deployments", params={"environment": concourse_input["source"]["check_environment"]}, headers=headers)
+assert (
+    response.status_code == 200
+), f"Got unexpected response code {response.status_code} from GitHub: {response.json()}"
+
+json = response.json()
+
+sorted_versions = sorted([{"id": deployment["id"]} for deployment in json], key=lambda d: d["id"])
+
+print(
+    dumps(
+        sorted_versions
+    )
+)
