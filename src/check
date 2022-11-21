@@ -53,6 +53,6 @@ assert (
 
 json = response.json()
 
-sorted_versions = sorted([{"id": deployment["id"]} for deployment in json], key=lambda d: d["id"])
+sorted_versions = sorted([{"id": deployment["id"]} for deployment in json], key=lambda d: d["id"])  # type: ignore
 
 print(dumps(sorted_versions))
