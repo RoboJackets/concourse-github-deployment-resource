@@ -1,5 +1,5 @@
 [BASIC]
-disable=C0330,W1202
+disable=invalid-name,duplicate-code
 
 [FORMAT]
 expected-line-ending-format=LF

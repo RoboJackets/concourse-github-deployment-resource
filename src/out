@@ -91,8 +91,7 @@ if path.exists(state_file_path):
     if "environment_urls" in concourse_input["source"]:
         environment_urls = concourse_input["source"]["environment_urls"]
         response = get(
-            f"{api_base_url}/repos/{owner}/{repo}/deployments/{deployment_id}",
-            headers=headers,
+            f"{api_base_url}/repos/{owner}/{repo}/deployments/{deployment_id}", headers=headers, timeout=(5, 5)
         )
         assert (
             response.status_code == 200
@@ -102,7 +101,10 @@ if path.exists(state_file_path):
             data["environment_url"] = environment_urls[environment]
 
     response = post(
-        f"{api_base_url}/repos/{owner}/{repo}/deployments/{deployment_id}/statuses", json=data, headers=headers
+        f"{api_base_url}/repos/{owner}/{repo}/deployments/{deployment_id}/statuses",
+        json=data,
+        headers=headers,
+        timeout=(5, 5),
     )
     assert (
         response.status_code == 201
@@ -134,7 +136,7 @@ else:
         "environment": environment,
     }
 
-    response = post(f"{api_base_url}/repos/{owner}/{repo}/deployments", json=data, headers=headers)
+    response = post(f"{api_base_url}/repos/{owner}/{repo}/deployments", json=data, headers=headers, timeout=(5, 5))
     assert (
         response.status_code == 201
     ), f"Got unexpected response code {response.status_code} from GitHub: {response.json()}"

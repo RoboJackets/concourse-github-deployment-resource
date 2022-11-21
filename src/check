@@ -4,8 +4,8 @@
 Returns an empty list of versions
 """
 import logging
-from json import loads, dumps
-from sys import stdin, stderr
+from json import dumps, loads
+from sys import stderr, stdin
 
 from requests import get
 
@@ -41,7 +41,12 @@ headers = {
     "Accept": "application/vnd.github.antiope-preview+json,application/vnd.github.ant-man-preview+json,application/vnd.github.flash-preview+json",  # noqa: E501  # pylint: disable=C0301
 }
 
-response = get(f"{api_base_url}/repos/{owner}/{repo}/deployments", params={"environment": concourse_input["source"]["check_environment"]}, headers=headers)
+response = get(
+    f"{api_base_url}/repos/{owner}/{repo}/deployments",
+    params={"environment": concourse_input["source"]["check_environment"]},
+    headers=headers,
+    timeout=(5, 5),
+)
 assert (
     response.status_code == 200
 ), f"Got unexpected response code {response.status_code} from GitHub: {response.json()}"
@@ -50,8 +55,4 @@ json = response.json()
 
 sorted_versions = sorted([{"id": deployment["id"]} for deployment in json], key=lambda d: d["id"])
 
-print(
-    dumps(
-        sorted_versions
-    )
-)
+print(dumps(sorted_versions))
