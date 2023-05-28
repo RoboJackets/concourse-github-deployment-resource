@@ -1,4 +1,4 @@
-ARG base_image=python:3.10-alpine
+ARG base_image=python:3-slim-bullseye
 
 FROM ${base_image}
 

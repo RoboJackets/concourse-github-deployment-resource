@@ -1,5 +1,5 @@
 # concourse-github-deployment-resource
-[![GitHub license](https://img.shields.io/github/license/RoboJackets/concourse-github-deployment-resource)](https://github.com/RoboJackets/concourse-github-deployment-resource/blob/main/LICENSE) [![CI](https://concourse.robojackets.org/api/v1/teams/information-technology/pipelines/github-deployment/jobs/build-main/badge)](https://concourse.robojackets.org/teams/information-technology/pipelines/github-deployment)
+[![GitHub license](https://img.shields.io/github/license/RoboJackets/concourse-github-deployment-resource)](https://github.com/RoboJackets/concourse-github-deployment-resource/blob/main/LICENSE) [![CI](https://concourse.sandbox.aws.robojackets.net/api/v1/teams/information-technology/pipelines/github-deployment/jobs/build-main/badge)](https://concourse.sandbox.aws.robojackets.net/teams/information-technology/pipelines/github-deployment)
 
 Concourse resource for GitHub deployments
 
